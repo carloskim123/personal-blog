@@ -1,36 +1,29 @@
 ---
 layout: ../layouts/AboutLayout.astro
-title: "About"
+title: "About Me"
 ---
 
-AstroPaper is a minimal, responsive and SEO-friendly Astro blog theme. I designed and crafted this based on [my personal blog](https://satnaing.dev/blog).
+Hey there! 👋 I'm a 14-year-old web developer currently navigating the exciting world of 9th grade in Maryland. When I'm not buried in textbooks, you'll likely find me strumming on my guitar, exploring both acoustic and electric sounds.
 
-This theme is aimed to be accessible out of the box. Light and dark mode are supported by
-default and additional color schemes can also be configured.
+## Who Am I?
 
-This theme is self-documented \_ which means articles/posts in this theme can also be considered as documentations. So, see the documentation for more info.
+I'm not your typical high schooler; I'm the brains behind this blog site. It's my space to share my journey as a young web developer and offer insights into my life and experiences.
 
 <div>
   <img src="/assets/dev.svg" class="sm:w-1/2 mx-auto" alt="coding dev illustration">
 </div>
 
-## Tech Stack
+## What Powers This Blog?
 
-This theme is written in vanilla JavaScript (+ TypeScript for type checking) and a little bit of ReactJS for some interactions. TailwindCSS is used for styling; and Markdown is used for blog contents.
+Behind the scenes, I weave code to bring this blog to life. Here's a glimpse into the tech that fuels my creative outlet:
 
-## Features
+- **Languages:** Fluent in vanilla JavaScript, with a touch of TypeScript for type checking.
+- **Interactivity:** Sprinkles of ReactJS for that dynamic touch.
+- **Style:** TailwindCSS adds the finishing aesthetic strokes.
+- **Content:** Markdown is my go-to for crafting engaging blog posts.
 
-Here are certain features of this site.
+## Let's Connect
 
-- fully responsive and accessible
-- SEO-friendly
-- light & dark mode
-- fuzzy search
-- super fast performance
-- draft posts
-- pagination
-- sitemap & rss feed
-- highly customizable
+This blog is a window into my world, and I'd love to hear from you. Whether you want to share your thoughts or just say hi, drop me an [email](mailto:contact@yourdomain.com). Your feedback means a lot!
 
-If you like this theme, you can star/contribute to the [repo](https://github.com/satnaing/astro-paper).  
-Or you can even give any feedback via my [email](mailto:contact@satnaing.dev).
+Thanks for joining me on this journey! 🚀
