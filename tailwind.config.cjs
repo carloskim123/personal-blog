@@ -7,6 +7,9 @@ function withOpacity(variableName) {
   };
 }
 
+const defaultTheme = require("tailwindcss/defaultTheme");
+
+
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   content: ["./src/**/*.{astro,html,js,jsx,md,mdx,svelte,ts,tsx,vue}"],
@@ -57,7 +60,7 @@ module.exports = {
       transparent: "transparent",
     },
     fontFamily: {
-      mono: ["Space Mono", "monospace"],
+      mono: ["Space Mono", defaultTheme.fontFamily.mono],
     },
     // },
   },

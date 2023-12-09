@@ -24,6 +24,6 @@ Behind the scenes, I weave code to bring this blog to life. Here's a glimpse int
 
 ## Let's Connect
 
-This blog is a window into my world, and I'd love to hear from you. Whether you want to share your thoughts or just say hi, drop me an [email](mailto:contact@yourdomain.com). Your feedback means a lot!
+This blog is a window into my world, and I'd love to hear from you. Whether you want to share your thoughts or just say hi, drop me an [email](mailto:carloskirui154@gmail.com). Your feedback means a lot!
 
 Thanks for joining me on this journey! 🚀
