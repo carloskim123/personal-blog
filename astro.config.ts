@@ -11,8 +11,7 @@ export default defineConfig({
   site: SITE.website,
   output: "server",
   adapter: vercel({
-    edgeMiddleware: false,
-    functionPerRoute: false,
+    speedInsights: { enabled: false },
   }),
   integrations: [
     tailwind({
