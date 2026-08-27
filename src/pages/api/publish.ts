@@ -1,83 +1,67 @@
 import type { APIRoute } from "astro";
+import fs from "node:fs";
+import path from "node:path";
+
+export const prerender = false;
 
 export const POST: APIRoute = async ({ request }) => {
   try {
-    const data = await request.json();
-    const { title, description, tags, content, secret } = data;
+    const body = await request.json();
+    const { title, description, pubDatetime, content, slug } = body;
 
-    // Check passcode against Vercel environment variable
-    if (secret !== import.meta.env.ADMIN_SECRET) {
+    if (!title || !content) {
       return new Response(
-        JSON.stringify({ message: "Unauthorized: Invalid passcode" }),
-        { status: 401 }
+        JSON.stringify({ error: "Title and content are required." }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
       );
     }
 
-    // Format filename and slug
-    const slug = title
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/(^-|-$)+/g, "");
-    const filename = `${slug}.md`;
-    const dateStr = new Date().toISOString();
+    // Generate a clean slug from title if not provided
+    const postSlug =
+      slug ||
+      title
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/(^-|-$)+/g, "");
 
-    // Format frontmatter specifically for Astro-Paper
+    const date = pubDatetime || new Date().toISOString();
+
+    // Construct standard Astro frontmatter + Markdown
     const fileContent = `---
-author: Carlos
-pubDatetime: ${dateStr}
-title: "${title}"
-postSlug: "${slug}"
+title: "${title.replace(/"/g, '\\"')}"
+pubDatetime: ${date}
+description: "${(description || "").replace(/"/g, '\\"')}"
 featured: false
 draft: false
 tags:
-${tags
-  .split(",")
-  .map((t: string) => `  - ${t.trim()}`)
-  .join("\n")}
-description: "${description}"
+  - general
 ---
 
 ${content}
 `;
 
-    const contentBase64 = Buffer.from(fileContent).toString("base64");
-
-    const GITHUB_TOKEN = import.meta.env.GITHUB_TOKEN;
-    const REPO_OWNER = import.meta.env.GITHUB_OWNER;
-    const REPO_NAME = import.meta.env.GITHUB_REPO;
-
-    // Send file to GitHub repository
-    const response = await fetch(
-      `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/src/content/blog/${filename}`,
-      {
-        method: "PUT",
-        headers: {
-          Authorization: `Bearer ${GITHUB_TOKEN}`,
-          "Content-Type": "application/json",
-          "User-Agent": "Astro-Publish-API",
-        },
-        body: JSON.stringify({
-          message: `Add post: ${title}`,
-          content: contentBase64,
-          branch: "main",
-        }),
-      }
+    // Save directly into the Astro content collection directory
+    const filePath = path.join(
+      process.cwd(),
+      "src",
+      "content",
+      "blog",
+      `${postSlug}.md`
     );
-
-    if (!response.ok) {
-      const err = await response.json();
-      return new Response(JSON.stringify({ message: err.message }), {
-        status: 500,
-      });
-    }
+    fs.writeFileSync(filePath, fileContent, "utf-8");
 
     return new Response(
-      JSON.stringify({ message: "Post published successfully!" }),
-      { status: 200 }
+      JSON.stringify({
+        success: true,
+        message: "Post published successfully!",
+        slug: postSlug,
+      }),
+      { status: 200, headers: { "Content-Type": "application/json" } }
     );
-  } catch (err: any) {
-    return new Response(JSON.stringify({ message: err.message }), {
-      status: 500,
-    });
+  } catch (error) {
+    return new Response(
+      JSON.stringify({ error: "Failed to create post on server." }),
+      { status: 500, headers: { "Content-Type": "application/json" } }
+    );
   }
 };
