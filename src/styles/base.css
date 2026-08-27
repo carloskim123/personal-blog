@@ -1,24 +1,35 @@
+
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+
 @layer base {
-  :root,
+  *{
+    font-size: large;
+  }
+:root,
   html[data-theme="light"] {
-    --color-fill: 186,186,186;
-    --color-text-base: 40, 39, 40;
-    --color-accent: 0, 108, 172;
-    --color-card: 230, 230, 230;
-    --color-card-muted: 205, 205, 205;
-    --color-border: 236, 233, 233;
+    /* --- Global Spacing Controls --- */
+    --line-height: 1.75;      /* Increase/decrease line spacing here (e.g. 1.6 to 2.0) */
+    --letter-spacing: 0.02em; /* Increase/decrease letter/word spacing here */
+
+    /* Colors */
+    --color-fill: 255, 255, 255;
+    --color-text-base: 0, 0, 0;
+    --color-accent: 0, 0, 0;
+    --color-card: 250, 250, 250;
+    --color-card-muted: 240, 240, 240;
+    --color-border: 230, 230, 230;
   }
   html[data-theme="dark"] {
-    --color-fill: 15, 15, 38;
-    --color-text-base: 234, 237, 243;
-    --color-accent: 255, 187, 1;
-    --color-card: 52, 63, 96;
-    --color-card-muted: 138, 51, 2;
-    --color-border: 171, 160, 8;
+    --color-fill: 22, 27, 34;             /* Background */
+    --color-text-base: 240, 243, 246;  /* True white text */
+    --color-accent: 255, 255, 255;      /* Crisp white accent */
+    --color-card: 18, 18, 18;          /* Dark card container */
+    --color-card-muted: 30, 30, 30;    /* Dark hover state */
+    --color-border: 38, 38, 38;        /* Subtle dark divider */
   }
   #sun-svg,
   html[data-theme="dark"] #moon-svg {
@@ -28,7 +39,9 @@
   html[data-theme="dark"] #sun-svg {
     display: block;
   }
-  body {
+body {
+    line-height: var(--line-height);
+    letter-spacing: var(--letter-spacing);
     @apply flex min-h-[100svh] flex-col bg-skin-fill font-mono text-skin-base 
     selection:bg-skin-accent selection:bg-opacity-70 selection:text-skin-inverted;
   }
@@ -132,4 +145,10 @@
   .focus-outline {
     @apply outline-2 outline-offset-1 outline-skin-fill focus-visible:no-underline focus-visible:outline-dashed;
   }
+}
+
+/* Target the Shiki wrapper and all nested text spans */
+pre.astro-code, 
+pre.astro-code span {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace !important;
 }

@@ -1,0 +1,99 @@
+---
+import Layout from "../layouts/Layout.astro";
+---
+
+<Layout title="Blog Admin">
+  <main class="mx-auto max-w-3xl px-4 py-8">
+    <h1 class="text-2xl font-bold mb-6 text-skin-base">Create New Post</h1>
+    
+    <form id="publish-form" class="flex flex-col gap-4">
+      <input 
+        type="password" 
+        id="secret" 
+        placeholder="Passcode" 
+        class="p-2 border border-skin-line bg-transparent text-skin-base rounded focus:outline-none focus:border-skin-accent" 
+        required 
+      />
+      <input 
+        type="text" 
+        id="title" 
+        placeholder="Post Title" 
+        class="p-2 border border-skin-line bg-transparent text-skin-base rounded focus:outline-none focus:border-skin-accent" 
+        required 
+      />
+      <input 
+        type="text" 
+        id="description" 
+        placeholder="Short Description" 
+        class="p-2 border border-skin-line bg-transparent text-skin-base rounded focus:outline-none focus:border-skin-accent" 
+        required 
+      />
+      <input 
+        type="text" 
+        id="tags" 
+        placeholder="Tags (comma separated, e.g. web, dev, life)" 
+        class="p-2 border border-skin-line bg-transparent text-skin-base rounded focus:outline-none focus:border-skin-accent" 
+        required 
+      />
+      
+      <textarea 
+        id="content" 
+        rows="12" 
+        placeholder="Write your post here..." 
+        class="p-2 border border-skin-line bg-transparent text-skin-base rounded focus:outline-none focus:border-skin-accent font-mono" 
+        required
+      ></textarea>
+      
+      <button 
+        type="submit" 
+        id="submit-btn" 
+        class="bg-skin-accent text-skin-inverted py-2 px-4 rounded font-bold hover:opacity-90 transition cursor-pointer"
+      >
+        Publish to Live Site
+      </button>
+    </form>
+    
+    <p id="status-msg" class="mt-4 font-bold text-sm text-skin-base"></p>
+  </main>
+</Layout>
+
+<script>
+  const form = document.getElementById("publish-form") as HTMLFormElement;
+  const statusMsg = document.getElementById("status-msg")!;
+  const btn = document.getElementById("submit-btn") as HTMLButtonElement;
+
+  form?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    btn.disabled = true;
+    statusMsg.innerText = "Publishing to GitHub...";
+
+    const payload = {
+      secret: (document.getElementById("secret") as HTMLInputElement).value,
+      title: (document.getElementById("title") as HTMLInputElement).value,
+      description: (document.getElementById("description") as HTMLInputElement).value,
+      tags: (document.getElementById("tags") as HTMLInputElement).value,
+      content: (document.getElementById("content") as HTMLTextAreaElement).value,
+    };
+
+    try {
+      const res = await fetch("/api/publish", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      const result = await res.json();
+      
+      if (res.ok) {
+        statusMsg.innerText = "🚀 Published! Vercel is now building your new post live.";
+        form.reset();
+      } else {
+        statusMsg.innerText = `❌ Error: ${result.message}`;
+      }
+    } catch (err) {
+      statusMsg.innerText = "❌ Network error. Check your connection.";
+    } finally {
+      btn.disabled = false;
+    }
+  });
+</script>

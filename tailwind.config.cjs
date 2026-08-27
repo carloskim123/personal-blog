@@ -30,6 +30,7 @@ module.exports = {
         accent: withOpacity("--color-accent"),
         inverted: withOpacity("--color-fill"),
       },
+
     },
     backgroundColor: {
       skin: {
@@ -60,7 +61,7 @@ module.exports = {
       transparent: "transparent",
     },
     fontFamily: {
-      mono: ["Space Mono", defaultTheme.fontFamily.mono],
+      mono: ["Google Sans", defaultTheme.fontFamily.sans],
     },
     // },
   },

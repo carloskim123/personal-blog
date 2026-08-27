@@ -10,7 +10,6 @@ import Socials from "@components/Socials.astro";
 import getSortedPosts from "@utils/getSortedPosts";
 import slugify from "@utils/slugify";
 import { SOCIALS } from "@config";
-import "@fontsource/twinkle-star";
 
 const posts = await getCollection("blog");
 
@@ -42,22 +41,22 @@ const socialCount = SOCIALS.filter(social => social.active).length;
       </a>
 
       <p>
-       Greetings, fellow explorer of all things tech! Welcome to a world of curiosity, creativity, and digital delights - buckle up and let's dive in!
+        Welcome! This is my digital corner for random thoughts, creative ideas, and things I learn along the way. Think of it as a home for abstract musings made real.
       </p>
       <p>
-        Read the blog posts or check
+        Feel free to browse the blog posts or check out my
         <LinkButton
           className="hover:text-skin-accent underline underline-offset-4 decoration-dashed"
           href="https://github.com/carloskim123"
         >
-          README
-        </LinkButton> for more info.
+          about page
+        </LinkButton> to learn more about me.
       </p>
       {
         // only display if at least one social link is enabled
         socialCount > 0 && (
           <div class="social-wrapper">
-            <div class="social-links">Social Links:</div>
+            <div class="social-links">Connect with me:</div>
             <Socials />
           </div>
         )
