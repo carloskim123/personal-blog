@@ -1,6 +1,4 @@
 import type { APIRoute } from "astro";
-import fs from "node:fs";
-import path from "node:path";
 
 export const prerender = false;
 
@@ -16,7 +14,17 @@ export const POST: APIRoute = async ({ request }) => {
       );
     }
 
-    // Generate a clean slug from title if not provided
+    const token = process.env.GITHUB_TOKEN;
+    if (!token) {
+      return new Response(
+        JSON.stringify({
+          error:
+            "GITHUB_TOKEN environment variable is not configured on Vercel.",
+        }),
+        { status: 500, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
     const postSlug =
       slug ||
       title
@@ -26,7 +34,6 @@ export const POST: APIRoute = async ({ request }) => {
 
     const date = pubDatetime || new Date().toISOString();
 
-    // Construct standard Astro frontmatter + Markdown
     const fileContent = `---
 title: "${title.replace(/"/g, '\\"')}"
 pubDatetime: ${date}
@@ -40,27 +47,52 @@ tags:
 ${content}
 `;
 
-    // Save directly into the Astro content collection directory
-    const filePath = path.join(
-      process.cwd(),
-      "src",
-      "content",
-      "blog",
-      `${postSlug}.md`
-    );
-    fs.writeFileSync(filePath, fileContent, "utf-8");
+    const contentEncoded = Buffer.from(fileContent).toString("base64");
+
+    const repoOwner = "carloskim123";
+    const repoName = "personal-blog";
+    const filePath = `src/content/blog/${postSlug}.md`;
+
+    const githubUrl = `https://api.github.com/repos/${repoOwner}/${repoName}/contents/${filePath}`;
+
+    const githubRes = await fetch(githubUrl, {
+      method: "PUT",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+        "User-Agent": "Astro-Publish-API",
+      },
+      body: JSON.stringify({
+        message: `feat(blog): add post "${title}"`,
+        content: contentEncoded,
+        branch: "main",
+      }),
+    });
+
+    const githubData = await githubRes.json();
+
+    if (!githubRes.ok) {
+      return new Response(
+        JSON.stringify({
+          error: githubData.message || "GitHub API commit failed.",
+        }),
+        {
+          status: githubRes.status,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+    }
 
     return new Response(
       JSON.stringify({
         success: true,
-        message: "Post published successfully!",
-        slug: postSlug,
+        message: "Post committed successfully!",
       }),
       { status: 200, headers: { "Content-Type": "application/json" } }
     );
-  } catch (error) {
+  } catch (err: any) {
     return new Response(
-      JSON.stringify({ error: "Failed to create post on server." }),
+      JSON.stringify({ error: err.message || "Internal server error." }),
       { status: 500, headers: { "Content-Type": "application/json" } }
     );
   }
