@@ -4,13 +4,12 @@ export const prerender = false;
 
 export const POST: APIRoute = async ({ request }) => {
   try {
-    // 1. Passcode Check
-    const passcode = request.headers.get("x-admin-passcode");
+    const authHeader = request.headers.get("x-admin-passcode");
     const validPasscode = process.env.ADMIN_PASSCODE;
 
-    if (validPasscode && passcode !== validPasscode) {
+    if (validPasscode && authHeader !== validPasscode) {
       return new Response(
-        JSON.stringify({ error: "Unauthorized: Invalid Passcode" }),
+        JSON.stringify({ error: "Unauthorized: Invalid passcode" }),
         { status: 401 }
       );
     }
@@ -29,27 +28,15 @@ export const POST: APIRoute = async ({ request }) => {
     } = body;
 
     const token = process.env.GITHUB_TOKEN;
-    const repoOwner = process.env.GITHUB_OWNER || "carloskim123";
-    const repoName = process.env.GITHUB_REPO || "personal-blog";
+    const repoOwner = process.env.GITHUB_OWNER;
+    const repoName = process.env.GITHUB_REPO;
     const deployHook = process.env.VERCEL_DEPLOY_HOOK;
 
-    if (!token) {
+    if (!token || !repoOwner || !repoName) {
       return new Response(
-        JSON.stringify({ error: "Missing GITHUB_TOKEN environment variable" }),
+        JSON.stringify({ error: "Missing environment variables" }),
         { status: 500 }
       );
-    }
-
-    const cleanSlug = String(slug || "")
-      .toLowerCase()
-      .trim()
-      .replace(/[^a-z0-9-]/g, "")
-      .replace(/-+/g, "-");
-
-    if (!cleanSlug) {
-      return new Response(JSON.stringify({ error: "Invalid post slug" }), {
-        status: 400,
-      });
     }
 
     const formattedPubDate = pubDate
@@ -58,12 +45,9 @@ export const POST: APIRoute = async ({ request }) => {
     const tagList = Array.isArray(tags) && tags.length > 0 ? tags : ["others"];
 
     let frontmatter = `---\n`;
-    frontmatter += `title: "${title.replace(/"/g, '\\"')}"\n`;
+    frontmatter += `title: "${title}"\n`;
     frontmatter += `pubDatetime: ${formattedPubDate}\n`;
-    frontmatter += `description: "${(description || "").replace(
-      /"/g,
-      '\\"'
-    )}"\n`;
+    frontmatter += `description: "${description || ""}"\n`;
     frontmatter += `draft: ${Boolean(draft)}\n`;
     frontmatter += `featured: ${Boolean(featured)}\n`;
     frontmatter += `tags:\n${tagList
@@ -74,7 +58,7 @@ export const POST: APIRoute = async ({ request }) => {
     }
     frontmatter += `---\n\n${content}`;
 
-    const filePath = `src/content/blog/${cleanSlug}.md`;
+    const filePath = `src/content/blog/${slug}.md`;
     const getFileUrl = `https://api.github.com/repos/${repoOwner}/${repoName}/contents/${filePath}`;
 
     const headers = {
@@ -84,15 +68,12 @@ export const POST: APIRoute = async ({ request }) => {
       "Content-Type": "application/json",
     };
 
-    // Check existing file SHA for updates
     let sha: string | undefined;
-    try {
-      const checkRes = await fetch(getFileUrl, { headers });
-      if (checkRes.ok) {
-        const existingData = await checkRes.json();
-        sha = existingData.sha;
-      }
-    } catch (e) {}
+    const checkRes = await fetch(getFileUrl, { headers });
+    if (checkRes.ok) {
+      const existingData = await checkRes.json();
+      sha = existingData.sha;
+    }
 
     const fileContentBase64 = Buffer.from(frontmatter, "utf-8").toString(
       "base64"
@@ -108,13 +89,10 @@ export const POST: APIRoute = async ({ request }) => {
       }),
     });
 
-    const commitData = await commitRes.json();
-
     if (!commitRes.ok) {
+      const errData = await commitRes.json();
       return new Response(
-        JSON.stringify({
-          error: `GitHub API Error (${commitRes.status}): ${commitData.message}`,
-        }),
+        JSON.stringify({ error: errData.message || "GitHub commit failed" }),
         { status: commitRes.status }
       );
     }
@@ -123,7 +101,7 @@ export const POST: APIRoute = async ({ request }) => {
       await fetch(deployHook, { method: "POST" });
     }
 
-    return new Response(JSON.stringify({ success: true, slug: cleanSlug }), {
+    return new Response(JSON.stringify({ success: true, slug }), {
       status: 200,
     });
   } catch (err: any) {

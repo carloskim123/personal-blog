@@ -149,6 +149,7 @@ export const prerender = false;
       }
 
       input[type="text"],
+      input[type="password"],
       input[type="datetime-local"],
       textarea {
         width: 100%;
@@ -163,6 +164,7 @@ export const prerender = false;
       }
 
       input[type="text"]:focus,
+      input[type="password"]:focus,
       input[type="datetime-local"]:focus,
       textarea:focus {
         border-color: var(--accent);
@@ -422,6 +424,11 @@ export const prerender = false;
           <h2>Post Configuration</h2>
 
           <div class="form-group">
+            <label for="passcode">Admin Passcode</label>
+            <input type="password" id="passcode" required placeholder="Enter secret passcode..." />
+          </div>
+
+          <div class="form-group">
             <label for="title">Title</label>
             <input type="text" id="title" required placeholder="e.g. Building Next-Gen Interfaces" />
           </div>
@@ -532,6 +539,7 @@ export const prerender = false;
         applyTheme(isLight ? "dark" : "light");
       });
 
+      const passcodeInput = document.getElementById("passcode") as HTMLInputElement;
       const pubDateInput = document.getElementById("pubDate") as HTMLInputElement;
       const now = new Date();
       now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
@@ -561,6 +569,13 @@ export const prerender = false;
       const wordCount = document.getElementById("word-count")!;
       const charCount = document.getElementById("char-count")!;
       const readingTime = document.getElementById("reading-time")!;
+
+      const savedPasscode = localStorage.getItem("admin_passcode");
+      if (savedPasscode) passcodeInput.value = savedPasscode;
+
+      passcodeInput.addEventListener("input", () => {
+        localStorage.setItem("admin_passcode", passcodeInput.value.trim());
+      });
 
       heroImageInput.addEventListener("input", () => {
         const url = heroImageInput.value.trim();
@@ -691,7 +706,10 @@ export const prerender = false;
         try {
           const res = await fetch("/api/publish", {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: { 
+              "Content-Type": "application/json",
+              "x-admin-passcode": passcodeInput.value.trim()
+            },
             body: JSON.stringify(payload),
           });
 
