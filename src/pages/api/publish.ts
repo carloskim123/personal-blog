@@ -5,7 +5,11 @@ export const prerender = false;
 export const POST: APIRoute = async ({ request }) => {
   try {
     const body = await request.json();
-    const { title, description, pubDatetime, content, slug } = body;
+
+    const title = body.title;
+    const description = body.description || "No description provided.";
+    const content = body.content || body.body || "";
+    const slug = body.slug;
 
     if (!title || !content) {
       return new Response(
@@ -17,10 +21,7 @@ export const POST: APIRoute = async ({ request }) => {
     const token = process.env.GITHUB_TOKEN;
     if (!token) {
       return new Response(
-        JSON.stringify({
-          error:
-            "GITHUB_TOKEN environment variable is not configured on Vercel.",
-        }),
+        JSON.stringify({ error: "GITHUB_TOKEN missing on Vercel." }),
         { status: 500, headers: { "Content-Type": "application/json" } }
       );
     }
@@ -30,25 +31,28 @@ export const POST: APIRoute = async ({ request }) => {
       title
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, "-")
-        .replace(/(^-|-$)+/g, "");
+        .replace(/^-+|-+$/g, "");
 
-    const date = pubDatetime || new Date().toISOString();
+    // Subtract 5 minutes so Vercel build time never flags it as a future post
+    const pastDate = new Date(Date.now() - 5 * 60 * 1000).toISOString();
 
     const fileContent = `---
+author: Carlos Kirui
+pubDatetime: ${pastDate}
+postSlug: "${postSlug}"
 title: "${title.replace(/"/g, '\\"')}"
-pubDatetime: ${date}
-description: "${(description || "").replace(/"/g, '\\"')}"
+postSlug: "${postSlug}"
 featured: false
 draft: false
 tags:
   - general
+description: "${description.replace(/"/g, '\\"')}"
 ---
 
 ${content}
 `;
 
     const contentEncoded = Buffer.from(fileContent).toString("base64");
-
     const repoOwner = "carloskim123";
     const repoName = "personal-blog";
     const filePath = `src/content/blog/${postSlug}.md`;
