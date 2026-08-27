@@ -20,6 +20,7 @@ export const POST: APIRoute = async ({ request }) => {
     const token = process.env.GITHUB_TOKEN;
     const repoOwner = process.env.GITHUB_OWNER;
     const repoName = process.env.GITHUB_REPO;
+    const deployHook = process.env.VERCEL_DEPLOY_HOOK;
 
     if (!token || !repoOwner || !repoName) {
       return new Response(
@@ -28,12 +29,10 @@ export const POST: APIRoute = async ({ request }) => {
       );
     }
 
-    // Format strictly to Astro Paper schema requirements
     const formattedPubDate = pubDate
       ? new Date(pubDate).toISOString()
       : new Date().toISOString();
 
-    // Construct frontmatter using exact Astro Paper keys
     let frontmatter = `---\n`;
     frontmatter += `title: "${title.replace(/"/g, '\\"')}"\n`;
     frontmatter += `pubDatetime: ${formattedPubDate}\n`;
@@ -43,7 +42,7 @@ export const POST: APIRoute = async ({ request }) => {
     )}"\n`;
     frontmatter += `draft: ${Boolean(draft)}\n`;
     frontmatter += `featured: ${Boolean(featured)}\n`;
-    frontmatter += `tags:\n${tags
+    frontmatter += `tags:\n${(tags && tags.length > 0 ? tags : ["others"])
       .map((t: string) => `  - "${t}"`)
       .join("\n")}\n`;
 
@@ -56,7 +55,6 @@ export const POST: APIRoute = async ({ request }) => {
     const filePath = `src/content/blog/${slug}.md`;
     const getFileUrl = `https://api.github.com/repos/${repoOwner}/${repoName}/contents/${filePath}`;
 
-    // Check if file exists to get SHA for overwrite
     let sha: string | undefined;
     const checkRes = await fetch(getFileUrl, {
       headers: {
@@ -90,6 +88,10 @@ export const POST: APIRoute = async ({ request }) => {
         JSON.stringify({ error: errData.message || "GitHub API error" }),
         { status: commitRes.status }
       );
+    }
+
+    if (deployHook) {
+      await fetch(deployHook, { method: "POST" });
     }
 
     return new Response(JSON.stringify({ success: true, slug }), {

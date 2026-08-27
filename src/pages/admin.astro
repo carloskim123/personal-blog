@@ -172,7 +172,6 @@ export const prerender = false;
         font-family: ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, monospace;
       }
 
-      /* Toggles Container */
       .toggle-grid {
         display: grid;
         grid-template-columns: 1fr 1fr;
@@ -237,7 +236,6 @@ export const prerender = false;
         transform: translateX(18px);
       }
 
-      /* Tag Pills */
       .tag-cloud {
         display: flex;
         flex-wrap: wrap;
@@ -255,7 +253,6 @@ export const prerender = false;
         font-weight: 600;
       }
 
-      /* Image Preview Box */
       .hero-preview {
         width: 100%;
         height: 120px;
@@ -275,7 +272,6 @@ export const prerender = false;
         color: var(--text-secondary);
       }
 
-      /* Buttons & Actions */
       .btn-primary {
         width: 100%;
         background-color: var(--accent);
@@ -339,7 +335,6 @@ export const prerender = false;
         font-family: monospace;
       }
 
-      /* Markdown Helper Bar */
       .md-toolbar {
         display: flex;
         gap: 0.5rem;
@@ -423,7 +418,6 @@ export const prerender = false;
       </header>
 
       <form id="publish-form" class="grid-layout">
-        <!-- Sidebar Controls -->
         <div class="panel">
           <h2>Post Configuration</h2>
 
@@ -485,7 +479,6 @@ export const prerender = false;
           <div id="status-message" class="status-box hidden"></div>
         </div>
 
-        <!-- Editor & Preview Panel -->
         <div class="panel">
           <div class="editor-header">
             <div class="tab-group">
@@ -518,7 +511,6 @@ export const prerender = false;
     </div>
 
     <script>
-      // 1. Theme Switcher
       const themeToggle = document.getElementById("theme-toggle")!;
       const currentTheme = localStorage.getItem("theme") || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
 
@@ -540,13 +532,11 @@ export const prerender = false;
         applyTheme(isLight ? "dark" : "light");
       });
 
-      // 2. Default Date to Now
       const pubDateInput = document.getElementById("pubDate") as HTMLInputElement;
       const now = new Date();
       now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
       pubDateInput.value = now.toISOString().slice(0, 16);
 
-      // 3. Elements & State
       const titleInput = document.getElementById("title") as HTMLInputElement;
       const slugInput = document.getElementById("slug") as HTMLInputElement;
       const contentInput = document.getElementById("content") as HTMLTextAreaElement;
@@ -572,7 +562,6 @@ export const prerender = false;
       const charCount = document.getElementById("char-count")!;
       const readingTime = document.getElementById("reading-time")!;
 
-      // 4. Hero Image Preview Listener
       heroImageInput.addEventListener("input", () => {
         const url = heroImageInput.value.trim();
         if (url) {
@@ -585,7 +574,6 @@ export const prerender = false;
         saveLocalDraft();
       });
 
-      // 5. Auto Slug Generation
       titleInput.addEventListener("input", () => {
         slugInput.value = titleInput.value
           .toLowerCase()
@@ -596,14 +584,12 @@ export const prerender = false;
         saveLocalDraft();
       });
 
-      // 6. Tag Pill Preview
       tagsInput.addEventListener("input", () => {
         const tags = tagsInput.value.split(",").map(t => t.trim()).filter(t => t.length > 0);
         tagCloud.innerHTML = tags.map(t => `<span class="tag-chip">#${t}</span>`).join("");
         saveLocalDraft();
       });
 
-      // 7. Word, Char & Reading Time Counter
       contentInput.addEventListener("input", () => {
         const text = contentInput.value;
         charCount.innerText = `${text.length} chars`;
@@ -614,7 +600,6 @@ export const prerender = false;
         saveLocalDraft();
       });
 
-      // Toolbar Insert Helper
       (window as any).insertMD = (prefix: string, suffix: string) => {
         const start = contentInput.selectionStart;
         const end = contentInput.selectionEnd;
@@ -626,7 +611,6 @@ export const prerender = false;
         contentInput.dispatchEvent(new Event("input"));
       };
 
-      // 8. Auto Save Drafts to Local Storage
       function saveLocalDraft() {
         const draft = {
           title: titleInput.value,
@@ -642,7 +626,6 @@ export const prerender = false;
         localStorage.setItem("admin_post_draft", JSON.stringify(draft));
       }
 
-      // Restore Draft
       const savedDraft = localStorage.getItem("admin_post_draft");
       if (savedDraft) {
         try {
@@ -663,7 +646,6 @@ export const prerender = false;
         } catch (e) {}
       }
 
-      // 9. Tab Switching logic
       tabWrite.addEventListener("click", () => {
         tabWrite.classList.add("active");
         tabPreview.classList.remove("active");
@@ -682,7 +664,6 @@ export const prerender = false;
         }
       });
 
-      // 10. Direct GitHub API Backend Submission
       form.addEventListener("submit", async (e) => {
         e.preventDefault();
 
@@ -702,7 +683,7 @@ export const prerender = false;
           description: descriptionInput.value,
           content: contentInput.value,
           heroImage: heroImageInput.value.trim() || undefined,
-          tags: tagsArray.length > 0 ? tagsArray : ["general"],
+          tags: tagsArray.length > 0 ? tagsArray : ["others"],
           draft: draftToggle.checked,
           featured: featuredToggle.checked
         };
@@ -717,12 +698,12 @@ export const prerender = false;
           const data = await res.json();
 
           if (res.ok) {
-            statusMessage.innerText = "Published successfully! Redirecting...";
+            statusMessage.innerText = "Published successfully! Rebuilding site...";
             statusMessage.className = "status-box status-success";
             localStorage.removeItem("admin_post_draft");
 
             setTimeout(() => {
-              window.location.href = `/posts/${payload.slug}`;
+              window.location.href = "/posts";
             }, 1500);
           } else {
             throw new Error(data.error || "Failed to commit post to repository.");
