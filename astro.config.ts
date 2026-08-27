@@ -4,11 +4,13 @@ import react from "@astrojs/react";
 import remarkToc from "remark-toc";
 import remarkCollapse from "remark-collapse";
 import sitemap from "@astrojs/sitemap";
+import vercel from "@astrojs/vercel"; // 1. Added
 import { SITE } from "./src/config";
 
-// https://astro.build/config
 export default defineConfig({
   site: SITE.website,
+  output: "server", // 2. Added
+  adapter: vercel(), // 3. Added
   integrations: [
     tailwind({
       applyBaseStyles: false,
