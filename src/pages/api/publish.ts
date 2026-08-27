@@ -4,6 +4,17 @@ export const prerender = false;
 
 export const POST: APIRoute = async ({ request }) => {
   try {
+    // 1. Passcode Check
+    const passcode = request.headers.get("x-admin-passcode");
+    const validPasscode = process.env.ADMIN_PASSCODE;
+
+    if (validPasscode && passcode !== validPasscode) {
+      return new Response(
+        JSON.stringify({ error: "Unauthorized: Invalid Passcode" }),
+        { status: 401 }
+      );
+    }
+
     const body = await request.json();
     const {
       title,
@@ -18,13 +29,13 @@ export const POST: APIRoute = async ({ request }) => {
     } = body;
 
     const token = process.env.GITHUB_TOKEN;
-    const repoOwner = process.env.GITHUB_OWNER;
-    const repoName = process.env.GITHUB_REPO;
+    const repoOwner = process.env.GITHUB_OWNER || "carloskim123";
+    const repoName = process.env.GITHUB_REPO || "personal-blog";
     const deployHook = process.env.VERCEL_DEPLOY_HOOK;
 
-    if (!token || !repoOwner || !repoName) {
+    if (!token) {
       return new Response(
-        JSON.stringify({ error: "Missing environment variables on server" }),
+        JSON.stringify({ error: "Missing GITHUB_TOKEN environment variable" }),
         { status: 500 }
       );
     }
@@ -73,19 +84,16 @@ export const POST: APIRoute = async ({ request }) => {
       "Content-Type": "application/json",
     };
 
-    // Check existing SHA
+    // Check existing file SHA for updates
     let sha: string | undefined;
     try {
-      const checkRes = await fetch(`${getFileUrl}?ref=main`, { headers });
+      const checkRes = await fetch(getFileUrl, { headers });
       if (checkRes.ok) {
         const existingData = await checkRes.json();
         sha = existingData.sha;
       }
-    } catch (e) {
-      // Ignore if file doesn't exist
-    }
+    } catch (e) {}
 
-    // Commit file directly to main branch
     const fileContentBase64 = Buffer.from(frontmatter, "utf-8").toString(
       "base64"
     );
@@ -96,7 +104,6 @@ export const POST: APIRoute = async ({ request }) => {
       body: JSON.stringify({
         message: `feat(blog): publish post "${title}"`,
         content: fileContentBase64,
-        branch: "main",
         ...(sha ? { sha } : {}),
       }),
     });
