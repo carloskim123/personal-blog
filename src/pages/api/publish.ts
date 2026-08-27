@@ -24,14 +24,27 @@ export const POST: APIRoute = async ({ request }) => {
 
     if (!token || !repoOwner || !repoName) {
       return new Response(
-        JSON.stringify({ error: "Server environment configuration missing" }),
+        JSON.stringify({ error: "Missing environment variables on server" }),
         { status: 500 }
       );
+    }
+
+    const cleanSlug = String(slug || "")
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9-]/g, "")
+      .replace(/-+/g, "-");
+
+    if (!cleanSlug) {
+      return new Response(JSON.stringify({ error: "Invalid post slug" }), {
+        status: 400,
+      });
     }
 
     const formattedPubDate = pubDate
       ? new Date(pubDate).toISOString()
       : new Date().toISOString();
+    const tagList = Array.isArray(tags) && tags.length > 0 ? tags : ["others"];
 
     let frontmatter = `---\n`;
     frontmatter += `title: "${title.replace(/"/g, '\\"')}"\n`;
@@ -42,50 +55,59 @@ export const POST: APIRoute = async ({ request }) => {
     )}"\n`;
     frontmatter += `draft: ${Boolean(draft)}\n`;
     frontmatter += `featured: ${Boolean(featured)}\n`;
-    frontmatter += `tags:\n${(tags && tags.length > 0 ? tags : ["others"])
+    frontmatter += `tags:\n${tagList
       .map((t: string) => `  - "${t}"`)
       .join("\n")}\n`;
-
     if (heroImage) {
       frontmatter += `ogImage: "${heroImage}"\n`;
     }
-
     frontmatter += `---\n\n${content}`;
 
-    const filePath = `src/content/blog/${slug}.md`;
+    const filePath = `src/content/blog/${cleanSlug}.md`;
     const getFileUrl = `https://api.github.com/repos/${repoOwner}/${repoName}/contents/${filePath}`;
 
-    let sha: string | undefined;
-    const checkRes = await fetch(getFileUrl, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "User-Agent": "Astro-Admin-Publisher",
-      },
-    });
+    const headers = {
+      Authorization: `Bearer ${token}`,
+      Accept: "application/vnd.github.v3+json",
+      "User-Agent": "Astro-Admin-Publisher",
+      "Content-Type": "application/json",
+    };
 
-    if (checkRes.ok) {
-      const existingData = await checkRes.json();
-      sha = existingData.sha;
+    // Check existing SHA
+    let sha: string | undefined;
+    try {
+      const checkRes = await fetch(`${getFileUrl}?ref=main`, { headers });
+      if (checkRes.ok) {
+        const existingData = await checkRes.json();
+        sha = existingData.sha;
+      }
+    } catch (e) {
+      // Ignore if file doesn't exist
     }
+
+    // Commit file directly to main branch
+    const fileContentBase64 = Buffer.from(frontmatter, "utf-8").toString(
+      "base64"
+    );
 
     const commitRes = await fetch(getFileUrl, {
       method: "PUT",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-        "User-Agent": "Astro-Admin-Publisher",
-      },
+      headers,
       body: JSON.stringify({
         message: `feat(blog): publish post "${title}"`,
-        content: Buffer.from(frontmatter).toString("base64"),
+        content: fileContentBase64,
+        branch: "main",
         ...(sha ? { sha } : {}),
       }),
     });
 
+    const commitData = await commitRes.json();
+
     if (!commitRes.ok) {
-      const errData = await commitRes.json();
       return new Response(
-        JSON.stringify({ error: errData.message || "GitHub API error" }),
+        JSON.stringify({
+          error: `GitHub API Error (${commitRes.status}): ${commitData.message}`,
+        }),
         { status: commitRes.status }
       );
     }
@@ -94,7 +116,7 @@ export const POST: APIRoute = async ({ request }) => {
       await fetch(deployHook, { method: "POST" });
     }
 
-    return new Response(JSON.stringify({ success: true, slug }), {
+    return new Response(JSON.stringify({ success: true, slug: cleanSlug }), {
       status: 200,
     });
   } catch (err: any) {
